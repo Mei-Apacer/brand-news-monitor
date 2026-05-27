@@ -2,54 +2,71 @@ import feedparser
 import pandas as pd
 from datetime import datetime
 
-# 品牌關鍵字（中英文混合）
-keywords = [
-    'Apacer',
-    'Apacer 宇瞻',
-    '宇瞻',
-    'Innodisk',
-    'Innodisk 宜鼎',
-    '宜鼎'
-]
-
 results = []
 
-for keyword in keywords:
+# 中文新聞來源（台灣）
+tw_searches = [
+    '宇瞻',
+    'Apacer 宇瞻',
+    '宜鼎',
+    'Innodisk 宜鼎'
+]
 
-    # 中文台灣新聞 + 英文全球新聞
-    rss_urls = [
-        f'https://news.google.com/rss/search?q={keyword}&hl=zh-TW&gl=TW&ceid=TW:zh-Hant',
-        f'https://news.google.com/rss/search?q={keyword}&hl=en-US&gl=US&ceid=US:en'
-    ]
+# 英文新聞來源（全球）
+en_searches = [
+    'Apacer',
+    'Innodisk'
+]
 
-    for rss_url in rss_urls:
+# 台灣中文新聞
+for keyword in tw_searches:
 
-        feed = feedparser.parse(rss_url)
+    rss_url = f'https://news.google.com/rss/search?q={keyword}&hl=zh-TW&gl=TW&ceid=TW:zh-Hant'
 
-        # 每個來源抓前 20 則
-        for entry in feed.entries[:20]:
+    feed = feedparser.parse(rss_url)
 
-            results.append({
-                'Keyword': keyword,
-                'Title': entry.title,
-                'Source': entry.source.title if 'source' in entry else 'Unknown',
-                'Published': entry.published if 'published' in entry else '',
-                'Link': entry.link
-            })
+    for entry in feed.entries[:30]:
+
+        results.append({
+            'Language': 'Chinese',
+            'Keyword': keyword,
+            'Title': entry.title,
+            'Source': entry.source.title if 'source' in entry else 'Unknown',
+            'Published': entry.published if 'published' in entry else '',
+            'Link': entry.link
+        })
+
+# 國際英文新聞
+for keyword in en_searches:
+
+    rss_url = f'https://news.google.com/rss/search?q={keyword}&hl=en-US&gl=US&ceid=US:en'
+
+    feed = feedparser.parse(rss_url)
+
+    for entry in feed.entries[:20]:
+
+        results.append({
+            'Language': 'English',
+            'Keyword': keyword,
+            'Title': entry.title,
+            'Source': entry.source.title if 'source' in entry else 'Unknown',
+            'Published': entry.published if 'published' in entry else '',
+            'Link': entry.link
+        })
 
 # 建立 DataFrame
 news_df = pd.DataFrame(results)
 
-# 去除重複新聞
+# 去除重複
 news_df = news_df.drop_duplicates(subset=['Title'])
 
-# 依日期排序
+# 排序
 news_df = news_df.sort_values(by='Published', ascending=False)
 
-# 建立檔名
+# 檔名
 filename = f'brand_news_{datetime.now().strftime("%Y%m%d")}.csv'
 
-# 輸出 CSV
+# 匯出
 news_df.to_csv(filename, index=False, encoding='utf-8-sig')
 
 print(f'新聞報表已輸出：{filename}')
