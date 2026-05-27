@@ -2,11 +2,13 @@ import feedparser
 import pandas as pd
 from datetime import datetime
 
-# 品牌關鍵字
+# 品牌關鍵字（中英文混合）
 keywords = [
     'Apacer',
+    'Apacer 宇瞻',
     '宇瞻',
     'Innodisk',
+    'Innodisk 宜鼎',
     '宜鼎'
 ]
 
@@ -14,7 +16,7 @@ results = []
 
 for keyword in keywords:
 
-    # 中文＋英文 Google News RSS
+    # 中文台灣新聞 + 英文全球新聞
     rss_urls = [
         f'https://news.google.com/rss/search?q={keyword}&hl=zh-TW&gl=TW&ceid=TW:zh-Hant',
         f'https://news.google.com/rss/search?q={keyword}&hl=en-US&gl=US&ceid=US:en'
@@ -24,7 +26,8 @@ for keyword in keywords:
 
         feed = feedparser.parse(rss_url)
 
-        for entry in feed.entries[:10]:
+        # 每個來源抓前 20 則
+        for entry in feed.entries[:20]:
 
             results.append({
                 'Keyword': keyword,
@@ -40,7 +43,10 @@ news_df = pd.DataFrame(results)
 # 去除重複新聞
 news_df = news_df.drop_duplicates(subset=['Title'])
 
-# 依日期輸出檔名
+# 依日期排序
+news_df = news_df.sort_values(by='Published', ascending=False)
+
+# 建立檔名
 filename = f'brand_news_{datetime.now().strftime("%Y%m%d")}.csv'
 
 # 輸出 CSV
